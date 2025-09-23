@@ -92,7 +92,7 @@ export function SpeakingEvaluationModal({ isOpen, onClose, score }: SpeakingEval
   const evaluation = score.evaluation || score.evaluation_data;
   
   // Handle various conversation data structures
-  let conversation = score.conversation_history || evaluation?.conversation || [];
+  const conversation = score.conversation_history || evaluation?.conversation || [];
   
   const hasDetailedScores = evaluation || score.grammar_vocabulary_score || score.communication_score;
   
@@ -388,7 +388,7 @@ export function SpeakingEvaluationModal({ isOpen, onClose, score }: SpeakingEval
                         {conversation.map((message: any, index: number) => {
                           // Handle various possible message formats
                           let role = message.role || message.sender || 'unknown';
-                          let content = message.content || message.text || message.message || '';
+                          const content = message.content || message.text || message.message || '';
                           
                           // Normalize role names
                           role = role.toLowerCase();

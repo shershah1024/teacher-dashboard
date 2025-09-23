@@ -422,7 +422,7 @@ export function ChatbotEvaluationModal({ isOpen, onClose, score }: ChatbotEvalua
                         {conversation.map((message, index) => {
                           // Handle various possible message formats
                           let role = message.role || message.sender || 'unknown';
-                          let content = message.content || message.text || message.message || '';
+                          const content = message.content || message.text || message.message || '';
                           
                           // Normalize role names
                           role = role.toLowerCase();

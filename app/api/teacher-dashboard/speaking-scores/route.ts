@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     // Get conversations from speaking_log table
     const scoreWithTaskIds = speakingScores?.filter(s => s.task_id) || [];
-    let conversationMap = new Map();
+    const conversationMap = new Map();
     
     if (scoreWithTaskIds.length > 0) {
       // Get unique task-user pairs

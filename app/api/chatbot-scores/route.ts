@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     // Get conversations from conversation_log table for better conversation history
     const scoreWithTaskIds = scores?.filter(s => s.task_id) || [];
-    let conversationMap = new Map();
+    const conversationMap = new Map();
     
     if (scoreWithTaskIds.length > 0) {
       const taskUserPairs = scoreWithTaskIds.map(s => ({
