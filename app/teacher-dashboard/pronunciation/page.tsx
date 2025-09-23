@@ -252,22 +252,75 @@ export default function PronunciationDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pronunciation Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Individual learner pronunciation performance</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Enhanced Header */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pronunciation Dashboard</h1>
+              <p className="text-gray-600 mt-2">Individual learner pronunciation performance</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push('/teacher-dashboard')}
+              className="gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Main Dashboard
+            </Button>
+          </div>
+
+          {/* Real-time Stats Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-amber-600">{filteredCards.length}</div>
+                  <div className="text-sm text-amber-700">Active Learners</div>
+                </div>
+                <Volume2 className="h-8 w-8 text-amber-500" />
+              </div>
+            </div>
+            
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{pronunciationSessions.length}</div>
+                  <div className="text-sm text-blue-700">Total Sessions</div>
+                </div>
+                <Mic className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+            
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {filteredCards.length > 0 ? Math.round(filteredCards.reduce((sum, c) => sum + c.averageScore, 0) / filteredCards.length) : 0}%
+                  </div>
+                  <div className="text-sm text-green-700">Avg Score</div>
+                </div>
+                <TrendingUp className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {filteredCards.length > 0 ? Math.round(filteredCards.reduce((sum, c) => sum + c.totalWords, 0) / filteredCards.length) : 0}
+                  </div>
+                  <div className="text-sm text-purple-700">Avg Words</div>
+                </div>
+                <FileText className="h-8 w-8 text-purple-500" />
+              </div>
+            </div>
+          </div>
         </div>
-        <Button 
-          variant="ghost" 
-          onClick={() => router.push('/teacher-dashboard')}
-          className="gap-2"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Main Dashboard
-        </Button>
       </div>
+
+      <div className="container mx-auto p-6 max-w-7xl space-y-6">
 
       {/* Filters */}
       <Card>
@@ -486,11 +539,11 @@ export default function PronunciationDashboard() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCards.map((learner) => (
               <Card 
                 key={learner.user_id} 
-                className="hover:shadow-lg transition-all cursor-pointer"
+                className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-200 shadow-md bg-white relative"
                 onClick={() => setSelectedLearner(learner)}
               >
                 <CardHeader>

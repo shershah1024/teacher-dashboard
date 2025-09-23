@@ -248,22 +248,75 @@ export default function SpeakingDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Speaking Practice Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Oral communication performance and conversation analytics</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Enhanced Header */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Speaking Practice Dashboard</h1>
+              <p className="text-gray-600 mt-2">Oral communication performance and conversation analytics</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push('/teacher-dashboard')}
+              className="gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Main Dashboard
+            </Button>
+          </div>
+
+          {/* Real-time Stats Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{filteredCards.length}</div>
+                  <div className="text-sm text-blue-700">Active Speakers</div>
+                </div>
+                <Mic className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+            
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{speakingScores.length}</div>
+                  <div className="text-sm text-green-700">Speaking Sessions</div>
+                </div>
+                <MessageSquare className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            
+            <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-amber-600">
+                    {filteredCards.length > 0 ? Math.round(filteredCards.reduce((sum, c) => sum + c.averageScore, 0) / filteredCards.length) : 0}%
+                  </div>
+                  <div className="text-sm text-amber-700">Avg Score</div>
+                </div>
+                <TrendingUp className="h-8 w-8 text-amber-500" />
+              </div>
+            </div>
+            
+            <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {filteredCards.length > 0 ? Math.round(filteredCards.reduce((sum, c) => sum + c.uniqueLessons, 0) / filteredCards.length) : 0}
+                  </div>
+                  <div className="text-sm text-indigo-700">Avg Topics</div>
+                </div>
+                <BarChart3 className="h-8 w-8 text-indigo-500" />
+              </div>
+            </div>
+          </div>
         </div>
-        <Button 
-          variant="ghost" 
-          onClick={() => router.push('/teacher-dashboard')}
-          className="gap-2"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Main Dashboard
-        </Button>
       </div>
+
+      <div className="container mx-auto p-6 max-w-7xl space-y-6">
 
       {/* Filters */}
       <Card>
@@ -468,11 +521,11 @@ export default function SpeakingDashboard() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCards.map((learner) => (
               <Card 
                 key={learner.user_id} 
-                className="hover:shadow-lg transition-all cursor-pointer"
+                className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-200 shadow-md bg-white relative"
                 onClick={() => setSelectedLearner(learner)}
               >
                 <CardHeader>
