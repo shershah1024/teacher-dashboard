@@ -223,89 +223,78 @@ export default function GrammarErrorsDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Grammar Errors Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Grammar mistake analysis and student improvement tracking</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Enhanced Header */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Grammar Errors Dashboard</h1>
+              <p className="text-gray-600 mt-2">Grammar mistake analysis and student improvement tracking</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push('/teacher-dashboard')}
+              className="gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Main Dashboard
+            </Button>
+          </div>
+
+          {/* Real-time Stats Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-red-600">{data.generalTrends.totalErrors}</div>
+                  <div className="text-sm text-red-700">Total Errors</div>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-red-500" />
+              </div>
+            </div>
+
+            
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{data.summary.totalStudentsWithErrors}</div>
+                  <div className="text-sm text-blue-700">Students with Errors</div>
+                </div>
+                <Users className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+
+            
+            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {data.generalTrends.germanGrammarInsights.mostChallengingArea || 'None'}
+                  </div>
+                  <div className="text-sm text-orange-700">Most Challenging</div>
+                </div>
+                <Target className="h-8 w-8 text-orange-500" />
+              </div>
+            </div>
+
+            
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {data.generalTrends.weeklyTrend[3]?.errors || 0}
+                  </div>
+                  <div className="text-sm text-green-700">This Week</div>
+                </div>
+                <Activity className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+          </div>
         </div>
-        <Button 
-          variant="ghost" 
-          onClick={() => router.push('/teacher-dashboard')}
-          className="gap-2"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Main Dashboard
-        </Button>
       </div>
 
-      {/* General Trend Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-              Total Errors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.generalTrends.totalErrors}</div>
-            <p className="text-xs text-muted-foreground">
-              {data.generalTrends.recentErrors} this week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-500" />
-              Students with Errors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.summary.totalStudentsWithErrors}</div>
-            <p className="text-xs text-muted-foreground">
-              Avg {data.summary.averageErrorsPerStudent} errors/student
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Target className="h-4 w-4 text-orange-500" />
-              Most Challenging Area
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-bold">
-              {data.generalTrends.germanGrammarInsights.mostChallengingArea || 'None'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Difficulty: {data.generalTrends.germanGrammarInsights.difficultyScore}/10
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Activity className="h-4 w-4 text-green-500" />
-              Weekly Trend
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-bold">
-              {data.generalTrends.weeklyTrend[3]?.errors || 0} errors
-            </div>
-            <p className="text-xs text-muted-foreground">
-              This week
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="container mx-auto p-6 max-w-7xl space-y-6">
 
       {/* German Grammar Category Analysis */}
       <Card>
@@ -447,11 +436,11 @@ export default function GrammarErrorsDashboard() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCards.map((student) => (
             <Card 
               key={student.userId} 
-              className="hover:shadow-lg transition-all cursor-pointer"
+              className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-200 shadow-md bg-white relative"
               onClick={() => handleStudentClick(student)}
             >
               <CardHeader>
@@ -551,6 +540,7 @@ export default function GrammarErrorsDashboard() {
         }}
         student={selectedStudent}
       />
+      </div>
     </div>
   );
 }
