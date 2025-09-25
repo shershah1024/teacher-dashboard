@@ -53,84 +53,74 @@ interface QuickAction {
 
 const quickActions: QuickAction[] = [
   {
-    title: 'Task Completions',
-    description: 'Monitor learning progress and engagement',
-    icon: CheckCircle2,
-    href: '/teacher-dashboard/task-completions',
+    title: 'Manage Students',
+    description: 'Enroll and manage student accounts',
+    icon: Users,
+    href: '/teacher-dashboard/manage-students',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50 hover:bg-blue-100',
+    priority: 'high',
+    stats: '5 pending invites'
+  },
+  {
+    title: 'Student Progress',
+    description: 'Track overall learning progress',
+    icon: TrendingUp,
+    href: '/teacher-dashboard/student-progress',
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-50 hover:bg-emerald-100',
     priority: 'high',
-    stats: '358 completed'
+    stats: '24 active students'
+  },
+  {
+    title: 'Skills Overview',
+    description: 'Comprehensive skills assessment',
+    icon: BarChart3,
+    href: '/teacher-dashboard/skills',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50 hover:bg-purple-100',
+    priority: 'medium',
+    stats: 'All skills'
   },
   {
     title: 'Grammar Analysis',
-    description: 'Track exercise performance and errors',
+    description: 'Track exercise performance',
     icon: BookOpen,
     href: '/teacher-dashboard/grammar',
     color: 'text-green-600',
     bgColor: 'bg-green-50 hover:bg-green-100',
-    priority: 'high',
-    stats: '24 students active'
+    priority: 'low',
+    stats: '89% accuracy'
   },
   {
     title: 'Speaking Practice',
     description: 'Oral communication performance',
     icon: Mic,
     href: '/teacher-dashboard/speaking',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 hover:bg-blue-100',
-    priority: 'medium',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50 hover:bg-amber-100',
+    priority: 'low',
     stats: '152 sessions'
+  },
+  {
+    title: 'Task Completions',
+    description: 'Daily learning activities',
+    icon: CheckCircle2,
+    href: '/teacher-dashboard/task-completions',
+    color: 'text-teal-600',
+    bgColor: 'bg-teal-50 hover:bg-teal-100',
+    priority: 'low',
+    stats: '358 completed'
   },
   {
     title: 'Pronunciation',
     description: 'Word-level accuracy analytics',
     icon: Volume2,
     href: '/teacher-dashboard/pronunciation',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50 hover:bg-amber-100',
-    priority: 'medium',
-    stats: '89% avg accuracy'
-  },
-  {
-    title: 'Listening Skills',
-    description: 'Comprehension scores analysis',
-    icon: Headphones,
-    href: '/teacher-dashboard/listening',
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50 hover:bg-orange-100',
-    priority: 'medium',
-    stats: '18 assessments'
-  },
-  {
-    title: 'Reading & Writing',
-    description: 'Text comprehension and composition',
-    icon: FileText,
-    href: '/teacher-dashboard/reading',
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-50 hover:bg-teal-100',
-    priority: 'low',
-    stats: '12 exercises'
-  },
-  {
-    title: 'Discourse Analysis',
-    description: 'Conversation patterns and engagement',
-    icon: BarChart3,
-    href: '/teacher-dashboard/discourse-analysis',
     color: 'text-indigo-600',
     bgColor: 'bg-indigo-50 hover:bg-indigo-100',
     priority: 'low',
-    stats: '45 conversations'
-  },
-  {
-    title: 'Chatbot Interactions',
-    description: 'AI conversation practice analytics',
-    icon: MessageSquare,
-    href: '/teacher-dashboard/chatbot-scores',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 hover:bg-blue-100',
-    priority: 'low',
-    stats: '67 chats'
+    stats: '89% accuracy'
   }
 ];
 
@@ -177,13 +167,13 @@ export default function TeacherDashboardPage() {
         <div className="container mx-auto p-6 max-w-7xl">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg">
                 <School className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">telc A1 Teacher Portal</h1>
+                <h1 className="text-3xl font-bold text-gray-900">A&B Recruiting</h1>
                 <p className="text-gray-600">
-                  {getTimeBasedGreeting()}, {user?.firstName || 'Teacher'}
+                  Teacher Portal • {getTimeBasedGreeting()}, {user?.firstName || 'Teacher'}
                 </p>
               </div>
             </div>
@@ -195,16 +185,12 @@ export default function TeacherDashboardPage() {
                   <span className="text-sm font-medium">{dashboardStats.totalStudents} Students</span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Alerts
+              <Link href="/teacher-dashboard/manage-students">
+                <Button size="sm" className="gap-2">
+                  <Users className="h-4 w-4" />
+                  Manage Students
                 </Button>
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              </div>
+              </Link>
             </div>
           </div>
 
@@ -265,16 +251,12 @@ export default function TeacherDashboardPage() {
               <h2 className="text-2xl font-bold text-gray-900">Quick Actions</h2>
               <p className="text-gray-600">Access your most important analytics dashboards</p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
+            <Link href="/teacher-dashboard/manage-students">
+              <Button size="sm" variant="outline">
+                View All
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-            </div>
+            </Link>
           </div>
 
           {/* High Priority Cards */}

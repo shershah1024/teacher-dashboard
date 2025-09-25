@@ -17,6 +17,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 
   // For all other routes, require authentication
   // This will redirect to sign-in if not authenticated
+  // Note: This is only for teachers - students never access this dashboard
   await auth.protect();
 });
 

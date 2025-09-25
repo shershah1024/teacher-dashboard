@@ -12,9 +12,17 @@ const supabase = createClient(
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
+  // For development testing with webhook simulator
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
   if (!WEBHOOK_SECRET) {
-    console.error('CLERK_WEBHOOK_SECRET is not configured');
-    return new Response('Webhook secret not configured', { status: 500 });
+    if (isDevelopment) {
+      console.warn('⚠️ CLERK_WEBHOOK_SECRET not configured - webhook verification disabled in development');
+      // In development, allow testing without verification
+    } else {
+      console.error('CLERK_WEBHOOK_SECRET is not configured');
+      return new Response('Webhook secret not configured', { status: 500 });
+    }
   }
 
   // Get the headers
@@ -34,17 +42,25 @@ export async function POST(req: Request) {
   const body = JSON.stringify(payload);
 
   // Create a new Svix instance with your webhook secret
-  const wh = new Webhook(WEBHOOK_SECRET);
+  const wh = WEBHOOK_SECRET ? new Webhook(WEBHOOK_SECRET) : null;
 
   let evt: WebhookEvent;
 
   // Verify the payload with the headers
   try {
-    evt = wh.verify(body, {
-      "svix-id": svix_id,
-      "svix-timestamp": svix_timestamp,
-      "svix-signature": svix_signature,
-    }) as WebhookEvent;
+    if (WEBHOOK_SECRET) {
+      evt = wh.verify(body, {
+        "svix-id": svix_id,
+        "svix-timestamp": svix_timestamp,
+        "svix-signature": svix_signature,
+      }) as WebhookEvent;
+    } else if (isDevelopment) {
+      // In development without secret, parse directly
+      console.warn('⚠️ Skipping webhook verification in development');
+      evt = payload as WebhookEvent;
+    } else {
+      throw new Error('Cannot verify webhook without secret');
+    }
   } catch (err) {
     console.error('Error verifying webhook:', err);
     return new Response('Invalid webhook signature', { status: 400 });
@@ -52,7 +68,8 @@ export async function POST(req: Request) {
 
   // Handle the webhook
   const eventType = evt.type;
-  console.log(`Received Clerk webhook: ${eventType}`);
+  console.log(`\n🔔 Received Clerk webhook: ${eventType}`);
+  console.log('Webhook payload:', JSON.stringify(evt, null, 2));
 
   try {
     switch (eventType) {
@@ -132,7 +149,11 @@ async function handleUserCreated(userData: any) {
         return;
       }
 
-      console.log(`Successfully activated enrollment for ${email} in ${courseId}`);
+      console.log(`✅ Successfully activated enrollment for ${email} in ${courseId}`);
+      console.log(`   - Enrollment ID: ${data[0].id}`);
+      console.log(`   - Clerk User ID: ${id}`);
+      console.log(`   - Organization: ${organizationCode}`);
+      console.log(`   - Class: ${classId || 'No specific class'}`);
       
       // Optionally, you could trigger additional actions here like:
       // - Send welcome email

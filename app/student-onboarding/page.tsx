@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getCourseConfig, getCourseLessonUrl } from '@/lib/course-config';
 import { 
   CheckCircle2, 
   BookOpen, 
@@ -20,44 +21,34 @@ import {
   Zap
 } from 'lucide-react';
 
-interface CourseDetails {
+// Extended course details with local properties
+interface ExtendedCourseDetails {
   id: string;
   name: string;
   level: string;
+  platformUrl: string;
   duration: string;
   description: string;
   color: string;
 }
 
-const courseMap: Record<string, CourseDetails> = {
-  'telc_a1': { 
-    id: 'telc_a1',
-    name: 'telc A1 - Beginner German', 
-    level: 'A1', 
+const courseDescriptions: Record<string, { duration: string; description: string; color: string }> = {
+  'telc_a1': {
     duration: '3 months',
     description: 'Start your German journey with essential vocabulary and basic grammar',
     color: 'bg-green-100 text-green-800 border-green-200'
   },
-  'telc_a2': { 
-    id: 'telc_a2',
-    name: 'telc A2 - Elementary German', 
-    level: 'A2', 
+  'telc_a2': {
     duration: '3 months',
     description: 'Build confidence in everyday German conversations and situations',
     color: 'bg-blue-100 text-blue-800 border-blue-200'
   },
-  'telc_b1': { 
-    id: 'telc_b1',
-    name: 'telc B1 - Intermediate German', 
-    level: 'B1', 
+  'telc_b1': {
     duration: '4 months',
     description: 'Express yourself clearly on familiar topics and handle travel situations',
     color: 'bg-purple-100 text-purple-800 border-purple-200'
   },
-  'telc_b2': { 
-    id: 'telc_b2',
-    name: 'telc B2 - Upper Intermediate German', 
-    level: 'B2', 
+  'telc_b2': {
     duration: '4 months',
     description: 'Engage in complex discussions and understand abstract topics',
     color: 'bg-orange-100 text-orange-800 border-orange-200'
@@ -67,23 +58,39 @@ const courseMap: Record<string, CourseDetails> = {
 export default function StudentOnboardingPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [courseDetails, setCourseDetails] = useState<CourseDetails | null>(null);
+  const searchParams = useSearchParams();
+  const [courseDetails, setCourseDetails] = useState<ExtendedCourseDetails | null>(null);
   const [classInfo, setClassInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
 
   useEffect(() => {
     if (isLoaded && user?.publicMetadata) {
       const { courseId, classId, organizationCode } = user.publicMetadata as any;
       
-      if (courseId) {
-        const course = courseMap[courseId];
-        setCourseDetails(course);
+      // Also check URL params as fallback
+      const urlCourseId = searchParams.get('course') || courseId;
+      
+      if (urlCourseId) {
+        const config = getCourseConfig(urlCourseId);
+        const descriptions = courseDescriptions[urlCourseId];
         
-        // Activate enrollment
-        const email = user.primaryEmailAddress?.emailAddress;
-        if (email) {
-          activateEnrollment(email, courseId, classId);
+        if (config && descriptions) {
+          setCourseDetails({
+            id: config.id,
+            name: config.name,
+            level: config.level,
+            platformUrl: config.platformUrl,
+            ...descriptions
+          });
+          
+          // Activate enrollment
+          const email = user.primaryEmailAddress?.emailAddress;
+          if (email) {
+            activateEnrollment(email, urlCourseId, classId);
+          }
         }
       }
       
@@ -92,7 +99,7 @@ export default function StudentOnboardingPage() {
       // No metadata found - redirect to sign up
       router.push('/sign-up');
     }
-  }, [user, isLoaded, router]);
+  }, [user, isLoaded, router, searchParams]);
 
   const activateEnrollment = async (email: string, courseId: string, classId?: string) => {
     try {
@@ -116,8 +123,23 @@ export default function StudentOnboardingPage() {
   };
 
   const handleStartLearning = () => {
-    // For now, redirect to home page - in production this would go to student dashboard
-    router.push('/');
+    if (courseDetails) {
+      setRedirecting(true);
+      const lessonUrl = getCourseLessonUrl(courseDetails.id);
+      
+      // Start countdown
+      const timer = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            // Redirect to the course platform
+            window.location.href = lessonUrl;
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
   };
 
   if (loading) {
@@ -329,13 +351,18 @@ export default function StudentOnboardingPage() {
           <Button
             size="lg"
             onClick={handleStartLearning}
-            disabled={activating}
+            disabled={activating || redirecting}
             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-12 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
           >
             {activating ? (
               <>
                 <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                 Setting up your account...
+              </>
+            ) : redirecting ? (
+              <>
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                Redirecting to {courseDetails?.name} in {redirectCountdown}s...
               </>
             ) : (
               <>
@@ -344,9 +371,18 @@ export default function StudentOnboardingPage() {
               </>
             )}
           </Button>
-          <p className="mt-4 text-sm text-gray-600">
-            Your teacher will be notified once you begin
-          </p>
+          {redirecting && courseDetails && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-700 text-center">
+                Taking you to: <strong>{getCourseLessonUrl(courseDetails.id)}</strong>
+              </p>
+            </div>
+          )}
+          {!redirecting && (
+            <p className="mt-4 text-sm text-gray-600">
+              Your teacher will be notified once you begin
+            </p>
+          )}
           <p className="mt-2 text-xs text-gray-500">
             Welcome to A&B Recruiting's German Learning Platform
           </p>

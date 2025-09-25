@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "telc A1 Teacher Portal",
-  description: "Teacher dashboard for monitoring student progress in telc A1 German courses",
+  title: "A&B Recruiting - Teacher Portal",
+  description: "Teacher dashboard for monitoring student progress in German language courses",
 };
 
 export default function RootLayout({

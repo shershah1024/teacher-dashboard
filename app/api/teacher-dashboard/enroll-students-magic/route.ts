@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth, clerkClient } from '@clerk/nextjs/server';
+import { getCourseLessonUrl, isValidCourseId } from '@/lib/course-config';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -90,8 +91,7 @@ export async function POST(request: NextRequest) {
     const { emails, courseId, organizationCode, classId } = body;
 
     // Validate course ID
-    const validCourses = ['telc_a1', 'telc_a2', 'telc_b1', 'telc_b2'];
-    if (!validCourses.includes(courseId)) {
+    if (!isValidCourseId(courseId)) {
       return NextResponse.json(
         { error: 'Invalid course ID' },
         { status: 400 }
@@ -136,18 +136,19 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Create Clerk invitation with metadata
-        // Use a default URL if NEXT_PUBLIC_APP_URL is not set
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003';
-        const redirectUrl = `${baseUrl}/student-onboarding`;
+        // Redirect directly to the course platform - no intermediary page
+        const coursePlatformUrl = getCourseLessonUrl(courseId);
+        const redirectUrl = coursePlatformUrl; // Direct redirect to course platform
         
-        console.log('Creating invitation with redirectUrl:', redirectUrl);
+        console.log('Creating invitation with direct redirect to:', redirectUrl);
         
         const invitationMetadata: any = {
           role: 'student',
           courseId,
           organizationCode,
           invitedBy: userId,
-          enrollmentType: 'teacher_invitation'
+          enrollmentType: 'teacher_invitation',
+          coursePlatformUrl: getCourseLessonUrl(courseId) // Store the platform URL
         };
 
         if (classId && classId !== 'none') {
@@ -177,7 +178,8 @@ export async function POST(request: NextRequest) {
           enrollment_data: {
             source: 'teacher_dashboard',
             invitation_method: 'magic_link',
-            clerk_invitation_id: invitation.id
+            clerk_invitation_id: invitation.id,
+            course_platform_url: getCourseLessonUrl(courseId)
           }
         };
 
