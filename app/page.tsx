@@ -15,6 +15,7 @@ import {
   Mic,
   MessageSquare,
   Users,
+  UserPlus,
   ChevronRight,
   BookOpen,
   Volume2,
@@ -472,6 +473,15 @@ export default function Home() {
               >
                 <Activity className="h-5 w-5 mr-2" />
                 All Students
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="default"
+                className="text-white hover:bg-white/10 hover:text-white text-base py-2 px-4"
+                onClick={() => router.push('/teacher-dashboard/manage-students')}
+              >
+                <UserPlus className="h-5 w-5 mr-2" />
+                Manage
               </Button>
               <Button 
                 variant="ghost" 

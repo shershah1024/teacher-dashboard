@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/backend": "^2.15.0",
     "@clerk/nextjs": "^6.32.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -32,6 +33,7 @@
     "react": "19.1.0",
     "react-day-picker": "^9.11.0",
     "react-dom": "19.1.0",
+    "svix": "^1.76.1",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
