@@ -223,10 +223,19 @@ export async function POST(request: NextRequest) {
       const vocabulary = vocabularyData.data?.filter(v => v.user_id === userId) || [];
       const chatbot = chatbotScores.data?.filter(c => c.user_id === userId) || [];
 
-      // Calculate overall progress
-      const totalLessons = 120; // Total lessons in the course
+      // Calculate overall progress based on task completions
+      // Progress is based on unique tasks completed, not lessons
+      const uniqueTasksCompleted = new Set(tasks.map(t => t.task_id)).size;
+      const estimatedTotalTasks = 240; // Estimated total tasks in the course (2 tasks per lesson * 120 lessons)
+
+      // Also consider lesson progress for a more accurate calculation
       const completedLessons = progress.filter(p => p.completion_percentage >= 100).length;
-      const overallProgress = Math.round((completedLessons / totalLessons) * 100);
+      const totalLessons = 120; // Total lessons in the course
+
+      // Weighted average: 70% task completion + 30% lesson completion
+      const taskProgress = (uniqueTasksCompleted / estimatedTotalTasks) * 100;
+      const lessonProgress = (completedLessons / totalLessons) * 100;
+      const overallProgress = Math.round((taskProgress * 0.7) + (lessonProgress * 0.3));
       
       // Get current lesson/module
       const latestProgress = progress.sort((a, b) => 

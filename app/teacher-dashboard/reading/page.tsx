@@ -93,7 +93,7 @@ export default function ReadingDashboard() {
       const response = await fetch('/api/teacher-dashboard/reading-scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationCode: 'ANB' })
+        body: JSON.stringify({ organizationCode: 'default' })
       });
       
       const data = await response.json();

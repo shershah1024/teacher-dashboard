@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Search, 
-  ChevronLeft, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Search,
+  ChevronLeft,
+  TrendingUp,
+  TrendingDown,
   Users,
   AlertTriangle,
   Target,
@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from 'next/navigation';
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 interface SkillMetrics {
   speaking: { score: number; trend: 'up' | 'down' | 'stable'; sessions: number };
@@ -134,9 +135,9 @@ export default function StudentProgressDashboard() {
       const response = await fetch('/api/teacher-dashboard/student-progress-overview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationCode: 'ANB' })
+        body: JSON.stringify({})
       });
-      
+
       const responseData = await response.json();
       setData(responseData);
     } catch (error) {
@@ -352,168 +353,82 @@ export default function StudentProgressDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Navigation Bar */}
-      <nav className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 max-w-7xl">
-          <div className="flex items-center justify-between">
-            {/* Logo and Brand */}
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-white/10 backdrop-blur rounded-lg">
-                <CheckCircle2 className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">telc A1 German</h1>
-                <p className="text-blue-100 text-sm">Teacher Dashboard</p>
-              </div>
-            </div>
+      {/* Consistent Dashboard Header */}
+      <DashboardHeader
+        title="Student Progress Dashboard"
+        description="Comprehensive view of all student learning analytics and performance metrics"
+        icon={Activity}
+        showBackButton={true}
+        onRefresh={fetchProgressData}
+        actions={
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/')}
+            className="text-white hover:bg-white/10 hover:text-white"
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Overview
+          </Button>
+        }
+      />
 
-            {/* Navigation Links */}
-            <div className="hidden lg:flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                className="text-white hover:bg-white/10 hover:text-white"
-                onClick={() => router.push('/')}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Overview
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-white/90 bg-white/10"
-              >
-                <Activity className="h-4 w-4 mr-2" />
-                All Students
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-white hover:bg-white/10 hover:text-white"
-                onClick={() => router.push('/teacher-dashboard/task-completions')}
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Tasks
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-white hover:bg-white/10 hover:text-white"
-                onClick={() => router.push('/teacher-dashboard/grammar')}
-              >
-                <BookOpen className="h-4 w-4 mr-2" />
-                Skills
-              </Button>
-              
-              <div className="ml-4 h-8 w-px bg-white/20" />
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-white hover:bg-white/10 hover:text-white"
-                onClick={fetchProgressData}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-white hover:bg-white/10 hover:text-white relative"
-              >
-                <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-white hover:bg-white/10 hover:text-white"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* User Info */}
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden md:block">
-                <p className="font-semibold">Teacher</p>
-                <p className="text-xs text-blue-100">Admin Access</p>
-              </div>
-              <Avatar className="h-10 w-10 border-2 border-white/20">
-                <AvatarFallback className="bg-white/10 text-white">
-                  T
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Page Header with Stats */}
+      {/* Metrics Overview - Consistent Design */}
       <div className="bg-white border-b shadow-sm">
-        <div className="container mx-auto px-6 py-8 max-w-7xl">
-          <div className="mb-6">
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => router.push('/')}
-                className="p-0 h-auto hover:text-gray-700"
-              >
-                Home
-              </Button>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-gray-700 font-medium">All Students</span>
+        <div className="container mx-auto px-6 py-6 max-w-7xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-blue-600 rounded-xl p-5 text-white shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-blue-50 mb-1">Total Students</div>
+                  <div className="text-4xl font-bold">{data.summary.totalStudents}</div>
+                </div>
+                <Users className="h-8 w-8 text-blue-100" />
+              </div>
+              <div className="text-sm text-blue-50">Across all programs</div>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Student Progress Overview</h1>
-            <p className="text-gray-600">Comprehensive view of student engagement, progress, and performance</p>
-          </div>
 
-          {/* Real-time Stats Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="flex items-center justify-between">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{data.summary.totalStudents}</div>
-                  <div className="text-sm text-blue-700">Total Students</div>
+                  <div className="text-sm font-medium text-gray-600 mb-1">Active (7d)</div>
+                  <div className="text-4xl font-bold text-gray-900">{data.summary.activeStudents}</div>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
+                <Activity className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="text-sm text-gray-600">{Math.round((data.summary.activeStudents / data.summary.totalStudents) * 100)}% engagement</div>
+            </div>
+
+            <div className="bg-white rounded-xl p-5 border-2 border-red-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-red-700 mb-1">At Risk</div>
+                  <div className="text-4xl font-bold text-red-600">{data.summary.atRiskStudents}</div>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-red-400" />
+              </div>
+              <div className="text-sm text-red-600">Need attention</div>
+            </div>
+
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-gray-600 mb-1">Avg Progress</div>
+                  <div className="text-4xl font-bold text-gray-900">{data.summary.averageProgress}%</div>
+                </div>
+                <Target className="h-8 w-8 text-gray-400" />
               </div>
             </div>
-            
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <div className="flex items-center justify-between">
+
+            <div className="bg-emerald-600 rounded-xl p-5 text-white shadow-md">
+              <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="text-2xl font-bold text-green-600">{data.summary.activeStudents}</div>
-                  <div className="text-sm text-green-700">Active (7d)</div>
+                  <div className="text-sm font-medium text-emerald-50 mb-1">Engagement</div>
+                  <div className="text-4xl font-bold">{data.summary.averageEngagement}%</div>
                 </div>
-                <Activity className="h-8 w-8 text-green-500" />
+                <Zap className="h-8 w-8 text-emerald-100" />
               </div>
-            </div>
-            
-            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-red-600">{data.summary.atRiskStudents}</div>
-                  <div className="text-sm text-red-700">At Risk</div>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-red-500" />
-              </div>
-            </div>
-            
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-purple-600">{data.summary.averageProgress}%</div>
-                  <div className="text-sm text-purple-700">Avg Progress</div>
-                </div>
-                <Target className="h-8 w-8 text-purple-500" />
-              </div>
-            </div>
-            
-            <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-amber-600">{data.summary.averageEngagement}%</div>
-                  <div className="text-sm text-amber-700">Avg Engagement</div>
-                </div>
-                <Zap className="h-8 w-8 text-amber-500" />
-              </div>
+              <div className="text-sm text-emerald-50">Overall class</div>
             </div>
           </div>
         </div>
@@ -564,51 +479,36 @@ export default function StudentProgressDashboard() {
             </div>
           </div>
           
-          {/* Filter Buttons - Colorful flat list */}
-          <div className="flex flex-wrap gap-3">
+          {/* Filter Buttons - Clean minimal design */}
+          <div className="flex flex-wrap gap-2">
             {quickFiltersList.map((filter) => {
               const count = getFilterCount(filter.key);
               const isActive = activeFilters.includes(filter.key);
               const IconComponent = filter.icon;
-              
+
               return (
-                <Button
+                <button
                   key={filter.key}
                   onClick={() => toggleQuickFilter(filter.key)}
                   disabled={count === 0}
-                  variant="outline"
-                  size="sm"
                   className={cn(
-                    "gap-2 font-medium transition-all duration-200 border-2",
-                    isActive ? [
-                      filter.activeBg,
-                      "text-white border-transparent shadow-lg scale-105 hover:opacity-90"
-                    ] : [
-                      filter.bgColor,
-                      filter.borderColor,
-                      filter.textColor,
-                      count === 0
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:scale-105 hover:shadow-md hover:border-opacity-100"
-                    ]
+                    "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border-2",
+                    isActive
+                      ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                      : count === 0
+                        ? "opacity-40 cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500"
+                        : "bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
                   )}
                 >
                   <IconComponent className="h-4 w-4" />
                   <span>{filter.label}</span>
-                  <Badge 
-                    variant="outline" 
-                    className={cn(
-                      "ml-1 px-1.5 py-0 text-xs font-bold border",
-                      isActive ? "bg-white/20 text-white border-white/30" : [
-                        filter.bgColor,
-                        filter.borderColor,
-                        filter.textColor
-                      ]
-                    )}
-                  >
+                  <span className={cn(
+                    "text-xs font-bold px-1.5 py-0.5 rounded",
+                    isActive ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-700"
+                  )}>
                     {count}
-                  </Badge>
-                </Button>
+                  </span>
+                </button>
               );
             })}
           </div>
@@ -617,256 +517,200 @@ export default function StudentProgressDashboard() {
         
         {/* Results Header with Sort */}
         <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
-          {filteredStudents.length} Students Found
-        </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Sort by:</span>
-          <Button
-            size="sm"
-            variant={sortBy === 'engagement' ? 'default' : 'ghost'}
-            onClick={() => setSortBy('engagement')}
-            className="h-8"
-          >
-            Engagement
-          </Button>
-          <Button
-            size="sm"
-            variant={sortBy === 'progress' ? 'default' : 'ghost'}
-            onClick={() => setSortBy('progress')}
-            className="h-8"
-          >
-            Progress
-          </Button>
-          <Button
-            size="sm"
-            variant={sortBy === 'activity' ? 'default' : 'ghost'}
-            onClick={() => setSortBy('activity')}
-            className="h-8"
-          >
-            Recent Activity
-          </Button>
-          <Button
-            size="sm"
-            variant={sortBy === 'name' ? 'default' : 'ghost'}
-            onClick={() => setSortBy('name')}
-            className="h-8"
-          >
-            Name
-          </Button>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            {filteredStudents.length} {filteredStudents.length === 1 ? 'Student' : 'Students'}
+          </h2>
+          <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-white">
+            <button
+              onClick={() => setSortBy('engagement')}
+              className={cn(
+                "px-3 py-1 text-sm font-medium rounded transition-all",
+                sortBy === 'engagement'
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              )}
+            >
+              Engagement
+            </button>
+            <button
+              onClick={() => setSortBy('progress')}
+              className={cn(
+                "px-3 py-1 text-sm font-medium rounded transition-all",
+                sortBy === 'progress'
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              )}
+            >
+              Progress
+            </button>
+            <button
+              onClick={() => setSortBy('activity')}
+              className={cn(
+                "px-3 py-1 text-sm font-medium rounded transition-all",
+                sortBy === 'activity'
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              )}
+            >
+              Activity
+            </button>
+            <button
+              onClick={() => setSortBy('name')}
+              className={cn(
+                "px-3 py-1 text-sm font-medium rounded transition-all",
+                sortBy === 'name'
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              )}
+            >
+              Name
+            </button>
+          </div>
         </div>
-      </div>
 
-        {/* Student Cards Grid - Enhanced Design */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        {/* Student Cards Grid - 2025 Modern Design */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
         {filteredStudents.map((student) => (
-          <Card 
-            key={student.userId} 
-            className="group relative overflow-hidden bg-gradient-to-br from-white via-white to-gray-50/50 border-2 border-gray-100 shadow-lg hover:shadow-2xl hover:border-gray-200 hover:-translate-y-2 transform transition-all duration-500 cursor-pointer backdrop-blur-sm"
+          <div
+            key={student.userId}
+            className="group cursor-pointer bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300"
             onClick={() => router.push(`/teacher-dashboard/student/${student.userId}`)}
           >
-            {/* Animated Background Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-50/30 group-hover:to-blue-100/50 transition-all duration-500" />
-            
-            {/* Status Indicator - Enhanced */}
-            <div className={cn(
-              "absolute top-0 left-0 right-0 h-2 bg-gradient-to-r",
-              student.atRiskOfDropout ? "from-red-400 to-red-600" :
-              student.engagementScore >= 70 ? "from-green-400 to-green-600" :
-              student.engagementScore >= 40 ? "from-blue-400 to-blue-600" :
-              "from-orange-400 to-red-500"
-            )} />
-            
-            {/* Risk Badge */}
-            {student.atRiskOfDropout && (
-              <div className="absolute top-4 right-4 z-10">
-                <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
-                  <AlertTriangle className="h-3 w-3 inline mr-1" />
-                  AT RISK
-                </div>
-              </div>
-            )}
-            
-            <CardContent className="relative z-10 p-6">
-              {/* Header Section */}
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    {/* Avatar with Circular Progress Ring */}
-                    <div className="relative">
-                      <svg className="transform -rotate-90 w-16 h-16">
-                        <circle
-                          cx="32"
-                          cy="32"
-                          r="30"
-                          stroke="#e5e7eb"
-                          strokeWidth="3"
-                          fill="transparent"
-                        />
-                        <circle
-                          cx="32"
-                          cy="32"
-                          r="30"
-                          stroke={student.engagementScore >= 70 ? "#10b981" : student.engagementScore >= 40 ? "#3b82f6" : "#f59e0b"}
-                          strokeWidth="3"
-                          fill="transparent"
-                          strokeDasharray={`${(student.overallProgress * 188) / 100} 188`}
-                          className="transition-all duration-1000 ease-out group-hover:stroke-width-4"
-                        />
-                      </svg>
-                      <Avatar className="absolute inset-1 h-14 w-14">
-                        <AvatarFallback className={cn(
-                          "text-white font-bold text-lg shadow-lg",
-                          student.engagementScore >= 70 ? "bg-gradient-to-br from-green-400 via-green-500 to-green-600" :
-                          student.engagementScore >= 40 ? "bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600" :
-                          "bg-gradient-to-br from-orange-400 via-orange-500 to-red-600"
-                        )}>
-                          {student.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    {/* Streak Indicator */}
-                    {student.currentStreak > 0 && (
-                      <div className={cn(
-                        "absolute -bottom-1 -right-1 rounded-full p-1.5 shadow-lg animate-pulse",
-                        student.currentStreak > 7 ? "bg-gradient-to-r from-orange-400 to-red-500" : "bg-gradient-to-r from-blue-400 to-blue-500"
-                      )}>
-                        <Flame className="h-3 w-3 text-white" />
-                      </div>
-                    )}
+              {/* Header */}
+              <div className="flex items-start gap-3 mb-6">
+                <div className="relative flex-shrink-0">
+                  <div className="h-14 w-14 rounded-full bg-gray-900 flex items-center justify-center">
+                    <span className="text-white font-bold text-lg tracking-tight">
+                      {student.name.substring(0, 2).toUpperCase()}
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{student.name}</h3>
-                    <div className="space-y-1">
-                      <Badge 
-                        variant={student.inactivityDays === 0 ? "default" : 
-                                student.inactivityDays <= 3 ? "secondary" : 
-                                "destructive"}
-                        className="text-xs px-2 py-1"
-                      >
-                        {student.inactivityDays === 0 ? '🟢 Active today' :
-                         student.inactivityDays === 1 ? '🟡 Yesterday' :
-                         `🔴 ${student.inactivityDays}d inactive`}
-                      </Badge>
-                      {student.email && (
-                        <p className="text-xs text-gray-600">{student.email}</p>
-                      )}
+                  {student.currentStreak >= 7 && (
+                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-orange-500 flex items-center justify-center border-2 border-white">
+                      <Flame className="h-3 w-3 text-white fill-current" />
                     </div>
-                  </div>
+                  )}
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  {getPaceIcon(student.learningPace)}
-                  <span className={cn("text-xs font-medium capitalize", 
-                    student.learningPace === 'ahead' ? 'text-green-600' :
-                    student.learningPace === 'behind' ? 'text-red-600' :
-                    'text-blue-600'
-                  )}>
-                    {student.learningPace}
-                  </span>
+                <div className="flex-1 min-w-0 pt-1">
+                  <h3 className="text-base font-semibold text-gray-900 truncate mb-0.5 tracking-tight">
+                    {student.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 truncate">{student.email || student.currentModule}</p>
                 </div>
-              </div>
-
-              {/* Main Metrics Grid */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {/* Progress Card */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 shadow-inner">
-                  <div className="text-center">
-                    <div className={cn("text-2xl font-bold mb-1", getProgressColor(student.overallProgress))}>
-                      {student.overallProgress}%
-                    </div>
-                    <p className="text-xs font-medium text-blue-700 mb-2">Progress</p>
-                    <Progress value={student.overallProgress} className="h-1.5 bg-blue-200" />
-                    <p className="text-xs text-blue-600 mt-1">
-                      {student.lessonsCompleted}/{student.totalLessons}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Engagement Card */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 shadow-inner">
-                  <div className="text-center">
-                    <div className={cn("text-2xl font-bold mb-1", getEngagementColor(student.engagementScore))}>
-                      {student.engagementScore}%
-                    </div>
-                    <p className="text-xs font-medium text-green-700 mb-2">Engagement</p>
-                    {student.currentStreak > 0 && (
-                      <div className="flex items-center justify-center gap-1 bg-white/50 rounded px-2 py-0.5">
-                        <Flame className="h-3 w-3 text-orange-500" />
-                        <span className="text-xs font-bold text-orange-600">{student.currentStreak}d</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Performance and Skills */}
-              <div className="space-y-4">
-                {/* Average Score */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-gray-700 mb-1">Avg Score</p>
-                      <div className={cn("text-2xl font-bold", 
-                        student.averageScore >= 80 ? "text-green-600" :
-                        student.averageScore >= 60 ? "text-blue-600" :
-                        "text-red-600"
-                      )}>
-                        {student.averageScore}%
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 mb-1">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span className="text-xs font-medium text-gray-700">Best:</span>
-                      </div>
-                      <p className="text-sm font-bold text-green-600">{student.strongestSkill}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Focus Area */}
-                {student.recommendedFocus.length > 0 && (
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-bold text-amber-800 mb-1">Focus Area</p>
-                        <p className="text-xs text-amber-700">{student.recommendedFocus[0]}</p>
-                      </div>
+                {student.atRiskOfDropout && (
+                  <div className="flex-shrink-0 pt-1">
+                    <div className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Study Stats */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-2 text-center">
-                    <p className="text-sm font-bold text-gray-900">{student.averageDailyMinutes}</p>
-                    <p className="text-xs text-gray-600">min/day</p>
+              {/* Progress Bar - Prominent */}
+              <div className="mb-6">
+                <div className="flex items-baseline justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Progress</span>
+                  <span className="text-2xl font-bold text-gray-900 tracking-tight">{student.overallProgress}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gray-900 rounded-full transition-all duration-500"
+                    style={{ width: `${student.overallProgress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-5 mb-6">
+                {/* Engagement */}
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Engagement</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className={cn("text-xl font-bold tracking-tight",
+                      student.engagementScore >= 70 ? "text-green-600" :
+                      student.engagementScore >= 40 ? "text-blue-600" : "text-red-600"
+                    )}>
+                      {student.engagementScore}
+                    </span>
+                    <span className="text-sm text-gray-500">%</span>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-2 text-center">
-                    <p className="text-sm font-bold text-gray-900">{student.totalStudyHours}h</p>
-                    <p className="text-xs text-gray-600">total</p>
+                </div>
+
+                {/* Score */}
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Avg Score</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className={cn("text-xl font-bold tracking-tight",
+                      student.averageScore >= 80 ? "text-green-600" :
+                      student.averageScore >= 60 ? "text-blue-600" : "text-orange-600"
+                    )}>
+                      {student.averageScore}
+                    </span>
+                    <span className="text-sm text-gray-500">%</span>
+                  </div>
+                </div>
+
+                {/* Streak */}
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Streak</div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-gray-900 tracking-tight">{student.currentStreak}</span>
+                    <span className="text-sm text-gray-500">days</span>
+                  </div>
+                </div>
+
+                {/* Pace */}
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Pace</div>
+                  <div className="flex items-center gap-1.5">
+                    {student.learningPace === 'ahead' && <TrendingUp className="h-4 w-4 text-green-600" />}
+                    {student.learningPace === 'on-track' && <Activity className="h-4 w-4 text-blue-600" />}
+                    {student.learningPace === 'behind' && <TrendingDown className="h-4 w-4 text-red-600" />}
+                    <span className={cn("text-sm font-semibold capitalize",
+                      student.learningPace === 'ahead' ? 'text-green-600' :
+                      student.learningPace === 'behind' ? 'text-red-600' : 'text-blue-600'
+                    )}>
+                      {student.learningPace}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Enhanced Hover Action */}
-              <div className="mt-6 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg font-semibold py-4"
+              {/* Bottom Stats */}
+              <div className="pt-4 border-t border-gray-100 mb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Study Time</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-bold text-gray-900 tracking-tight">{student.averageDailyMinutes}</span>
+                      <span className="text-sm text-gray-500">min/day</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Lessons</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-bold text-gray-900 tracking-tight">{student.lessonsCompleted}</span>
+                      <span className="text-sm text-gray-400">/</span>
+                      <span className="text-sm text-gray-500">{student.totalLessons}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hover Action */}
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     router.push(`/teacher-dashboard/student/${student.userId}`);
                   }}
                 >
-                  View Detailed Analytics
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
+                  View Profile
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
         </div>
       </div>
@@ -877,10 +721,10 @@ export default function StudentProgressDashboard() {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
               <CheckCircle2 className="h-6 w-6 text-gray-600" />
-              <span className="text-gray-600 font-semibold">telc A1 German Learning Platform</span>
+              <span className="text-gray-600 font-semibold">German Learning Platform</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              <span>© 2024 A&B Recruiting</span>
+              <span>© 2024 Teacher Dashboard</span>
               <span>•</span>
               <Button variant="link" className="text-gray-500 hover:text-gray-700 p-0 h-auto">
                 Help & Support

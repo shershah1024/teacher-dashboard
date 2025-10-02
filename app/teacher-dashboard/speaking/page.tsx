@@ -101,7 +101,7 @@ export default function SpeakingDashboard() {
       const response = await fetch('/api/teacher-dashboard/speaking-scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationCode: 'ANB' })
+        body: JSON.stringify({ organizationCode: 'default' })
       });
       
       const userData = await response.json();

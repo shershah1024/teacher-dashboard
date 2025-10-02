@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/(.*)",
+  "/teacher-dashboard(.*)", // Temporarily make teacher dashboard public for development
 ]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {

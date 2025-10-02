@@ -102,7 +102,7 @@ export default function ChatbotScoresDashboard() {
       const response = await fetch('/api/chatbot-scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationCode: 'ANB' })
+        body: JSON.stringify({ organizationCode: 'default' })
       });
       
       const userData = await response.json();

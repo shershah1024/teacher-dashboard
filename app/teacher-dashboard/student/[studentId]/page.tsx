@@ -36,6 +36,7 @@ import {
   Activity,
   ChevronRight
 } from 'lucide-react';
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 interface DetailedStudentData {
   id: string;
@@ -156,114 +157,91 @@ export default function StudentDetailPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/teacher-dashboard">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold">{studentData.name}</h1>
-              <p className="text-gray-600 flex items-center gap-2 mt-1">
-                <Mail className="h-4 w-4" />
-                {studentData.email}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
+    <div className="min-h-screen bg-gray-50">
+      {/* Consistent Dashboard Header */}
+      <DashboardHeader
+        title={studentData.name}
+        description={studentData.email}
+        icon={Activity}
+        showBackButton={true}
+        onRefresh={fetchStudentDetails}
+        actions={
+          <>
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white">
               <Mail className="h-4 w-4 mr-2" />
               Send Message
             </Button>
-            <Button variant="outline">
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white">
               <Download className="h-4 w-4 mr-2" />
               Export Report
             </Button>
+          </>
+        }
+      />
+
+      {/* Metrics Overview - Consistent Design */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="container mx-auto px-6 py-6 max-w-7xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-blue-600 rounded-xl p-5 text-white shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-blue-50 mb-1">Overall Progress</div>
+                  <div className="text-4xl font-bold">{studentData.overallProgress}%</div>
+                </div>
+                <BarChart3 className="h-8 w-8 text-blue-100" />
+              </div>
+              <div className="text-sm text-blue-50">+8% this month</div>
+            </div>
+
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-gray-600 mb-1">Current Streak</div>
+                  <div className="text-4xl font-bold text-gray-900">{studentData.dailyStreak}</div>
+                </div>
+                <Target className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="text-sm text-gray-600">Longest: {studentData.longestStreak} days</div>
+            </div>
+
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-gray-600 mb-1">Words Learned</div>
+                  <div className="text-4xl font-bold text-gray-900">{studentData.totalWords}</div>
+                </div>
+                <Brain className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="text-sm text-gray-600">+{studentData.weeklyWords} this week</div>
+            </div>
+
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-gray-600 mb-1">Conversations</div>
+                  <div className="text-4xl font-bold text-gray-900">{studentData.totalConversations}</div>
+                </div>
+                <MessageSquare className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="text-sm text-gray-600">{studentData.speakingConversations} speaking</div>
+            </div>
+
+            <div className="bg-emerald-600 rounded-xl p-5 text-white shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-emerald-50 mb-1">Last Active</div>
+                  <div className="text-lg font-bold">{new Date(studentData.lastActive).toLocaleDateString()}</div>
+                </div>
+                <Clock className="h-8 w-8 text-emerald-100" />
+              </div>
+              <div className="text-sm text-emerald-50">{new Date(studentData.lastActive).toLocaleTimeString()}</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Key Metrics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-              <BarChart3 className="h-4 w-4 text-blue-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{studentData.overallProgress}%</p>
-            <div className="flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-green-500" />
-              <span className="text-xs text-green-500">+8% this month</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
-              <Target className="h-4 w-4 text-orange-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{studentData.dailyStreak} days</p>
-            <p className="text-xs text-gray-500">Longest: {studentData.longestStreak} days</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Words Learned</CardTitle>
-              <Brain className="h-4 w-4 text-purple-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{studentData.totalWords}</p>
-            <p className="text-xs text-gray-500">+{studentData.weeklyWords} this week</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Conversations</CardTitle>
-              <MessageSquare className="h-4 w-4 text-green-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{studentData.totalConversations}</p>
-            <p className="text-xs text-gray-500">
-              {studentData.speakingConversations} speaking
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Last Active</CardTitle>
-              <Clock className="h-4 w-4 text-gray-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm font-bold">
-              {new Date(studentData.lastActive).toLocaleDateString()}
-            </p>
-            <p className="text-xs text-gray-500">
-              {new Date(studentData.lastActive).toLocaleTimeString()}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="container mx-auto p-6 max-w-7xl">
 
       {/* Detailed Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
@@ -432,7 +410,7 @@ export default function StudentDetailPage() {
                   <div key={index} className="flex-1 flex flex-col items-center">
                     <div className="w-full bg-gray-200 rounded-t flex-1 flex items-end">
                       <div
-                        className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t"
+                        className="w-full bg-blue-600 rounded-t"
                         style={{
                           height: `${(day.minutesSpent / 60) * 100}%`,
                           minHeight: day.minutesSpent > 0 ? '4px' : '0'

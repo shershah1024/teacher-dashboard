@@ -114,7 +114,7 @@ export default function TaskCompletionsDashboard() {
       const response = await fetch('/api/teacher-dashboard/task-completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationCode: 'ANB' })
+        body: JSON.stringify({ organizationCode: 'default' })
       });
       
       const responseData = await response.json();

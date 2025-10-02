@@ -53,3 +53,6 @@ next-env.d.ts
 .idea
 *.swp
 *.swo
+
+# clerk configuration (can include secrets)
+/.clerk/

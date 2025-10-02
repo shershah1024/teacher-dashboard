@@ -68,6 +68,7 @@ import {
   Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 interface EnrollmentResult {
   email: string;
@@ -183,9 +184,9 @@ export default function ManageStudentsPage() {
   const fetchClasses = async () => {
     try {
       setLoadingClasses(true);
-      const response = await fetch(`/api/teacher-dashboard/classes?organization=ANB`);
+      const response = await fetch(`/api/teacher-dashboard/classes`);
       const data = await response.json();
-      
+
       if (response.ok && data.classes) {
         setClasses(data.classes);
       }
@@ -199,9 +200,9 @@ export default function ManageStudentsPage() {
   const fetchEnrollments = async () => {
     try {
       setLoadingEnrollments(true);
-      const response = await fetch(`/api/teacher-dashboard/enroll-students?organization=ANB`);
+      const response = await fetch(`/api/teacher-dashboard/enroll-students`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setEnrollments(data.enrollments);
       }
@@ -269,8 +270,7 @@ export default function ManageStudentsPage() {
         body: JSON.stringify({
           emails: emailsToProcess,
           courseId: selectedCourse,
-          classId: selectedClass === 'none' ? undefined : selectedClass,
-          organizationCode: 'ANB'
+          classId: selectedClass === 'none' ? undefined : selectedClass
         })
       });
 
@@ -357,172 +357,84 @@ peter.jones@example.com,`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
-      {/* Professional Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Consistent Dashboard Header */}
+      <DashboardHeader
+        title="Student Enrollment Center"
+        description="Manage student enrollments, send invitations, and track registration progress"
+        icon={UserPlus}
+        showBackButton={true}
+        onRefresh={fetchEnrollments}
+        actions={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-white hover:bg-white/10 hover:text-white"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Export
+          </Button>
+        }
+      />
+
+      {/* Metrics Overview - Consistent Design */}
       <div className="bg-white border-b shadow-sm">
-        <div className="px-6 py-4">
-          {/* Top Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => router.push('/teacher-dashboard')}
-                className="gap-2 text-gray-600 hover:text-gray-900"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
-              <Separator orientation="vertical" className="h-6" />
-              <nav className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">Teacher Portal</span>
-                <ChevronRight className="h-3 w-3 text-gray-400" />
-                <span className="text-gray-500">Student Management</span>
-                <ChevronRight className="h-3 w-3 text-gray-400" />
-                <span className="font-medium text-gray-900">Enrollment Center</span>
-              </nav>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={fetchEnrollments}
-                className="gap-2"
-              >
-                <RefreshCw className={cn("h-4 w-4", loadingEnrollments && "animate-spin")} />
-                Refresh
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                Export
-              </Button>
-              <Separator orientation="vertical" className="h-6" />
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8 border">
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs">
-                    {user?.firstName?.[0] || 'T'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden lg:block">
-                  <p className="text-sm font-medium text-gray-900">{user?.firstName || 'Teacher'}</p>
-                  <p className="text-xs text-gray-500">Admin Access</p>
+        <div className="container mx-auto px-6 py-6 max-w-7xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-blue-600 rounded-xl p-5 text-white shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-blue-50 mb-1">Total Students</div>
+                  <div className="text-4xl font-bold">{stats.total}</div>
                 </div>
+                <Users className="h-8 w-8 text-blue-100" />
               </div>
+              <div className="text-sm text-blue-50">+12% this month</div>
             </div>
-          </div>
 
-          {/* Page Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-                  <Users className="h-6 w-6 text-white" />
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-gray-600 mb-1">Active Students</div>
+                  <div className="text-4xl font-bold text-gray-900">{stats.active}</div>
                 </div>
-                Student Enrollment Center
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Manage student enrollments, send invitations, and track registration progress
-              </p>
+                <UserCheck className="h-8 w-8 text-gray-400" />
+              </div>
+              <Progress value={stats.acceptanceRate} className="h-2" />
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="gap-1 px-3 py-1">
-                <Building2 className="h-3 w-3" />
-                A&B Recruiting
-              </Badge>
-              <Badge variant="secondary" className="gap-1 px-3 py-1">
-                <Calendar className="h-3 w-3" />
-                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </Badge>
+
+            <div className="bg-white rounded-xl p-5 border-2 border-yellow-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-yellow-700 mb-1">Pending Invites</div>
+                  <div className="text-4xl font-bold text-yellow-600">{stats.invited}</div>
+                </div>
+                <Clock className="h-8 w-8 text-yellow-400" />
+              </div>
+              <div className="text-sm text-yellow-600">Awaiting response</div>
             </div>
-          </div>
-        </div>
 
-        {/* Stats Bar */}
-        <div className="px-6 pb-6">
-          <div className="grid grid-cols-5 gap-4">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Students</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp className="h-3 w-3 text-green-500" />
-                      <span className="text-xs text-green-600">+12% this month</span>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <Users className="h-5 w-5 text-blue-600" />
-                  </div>
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-gray-600 mb-1">Acceptance Rate</div>
+                  <div className="text-4xl font-bold text-gray-900">{stats.acceptanceRate}%</div>
                 </div>
-              </CardContent>
-            </Card>
+                <Target className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="text-sm text-gray-600">Last 30 days</div>
+            </div>
 
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Active Students</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-                    <Progress value={stats.acceptanceRate} className="h-1 mt-2" />
-                  </div>
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <UserCheck className="h-5 w-5 text-green-600" />
-                  </div>
+            <div className="bg-emerald-600 rounded-xl p-5 text-white shadow-md">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-sm font-medium text-emerald-50 mb-1">Recent Activity</div>
+                  <div className="text-4xl font-bold">{stats.recentActivity}</div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Pending Invites</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.invited}</p>
-                    <p className="text-xs text-gray-500 mt-1">Awaiting response</p>
-                  </div>
-                  <div className="p-3 bg-yellow-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Acceptance Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.acceptanceRate}%</p>
-                    <p className="text-xs text-gray-500 mt-1">Last 30 days</p>
-                  </div>
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <Target className="h-5 w-5 text-purple-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Recent Activity</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.recentActivity}</p>
-                    <p className="text-xs text-gray-500 mt-1">Last 24 hours</p>
-                  </div>
-                  <div className="p-3 bg-orange-50 rounded-lg">
-                    <Activity className="h-5 w-5 text-orange-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <Activity className="h-8 w-8 text-emerald-100" />
+              </div>
+              <div className="text-sm text-emerald-50">Last 24 hours</div>
+            </div>
           </div>
         </div>
       </div>
@@ -533,12 +445,12 @@ peter.jones@example.com,`;
           {/* Enrollment Form Section */}
           <div className="xl:col-span-2">
             <Card className="shadow-lg border-0">
-              <CardHeader className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+              <CardHeader className="bg-blue-600 text-white">
                 <CardTitle className="flex items-center gap-2">
                   <UserPlus className="h-5 w-5" />
                   Add New Students
                 </CardTitle>
-                <CardDescription className="text-blue-100">
+                <CardDescription className="text-blue-50">
                   Invite students to join your courses
                 </CardDescription>
               </CardHeader>
@@ -688,7 +600,7 @@ peter.jones@example.com,`;
                 <Button
                   onClick={handleAddStudents}
                   disabled={loading || (inputMode === 'single' ? !emailInput || !validateEmail(emailInput) : getEmailCount() === 0)}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   {loading ? (
                     <>
@@ -859,7 +771,7 @@ peter.jones@example.com,`;
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-4">
                                 <Avatar className="h-12 w-12 border-2 border-gray-100">
-                                  <AvatarFallback className={`bg-gradient-to-br ${courseInfo.color} text-white font-semibold`}>
+                                  <AvatarFallback className="bg-blue-600 text-white font-semibold">
                                     {enrollment.student_email.substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>

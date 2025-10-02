@@ -127,7 +127,7 @@ export default function GrammarDashboard() {
       const response = await fetch('/api/teacher-dashboard/grammar-scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationCode: 'ANB' })
+        body: JSON.stringify({ organizationCode: 'default' })
       });
       
       const data = await response.json();

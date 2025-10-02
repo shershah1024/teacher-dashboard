@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -41,10 +41,19 @@ import {
   Brain,
   Clock,
   Sparkles,
-  Eye
+  Eye,
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Mic as MicIcon } from 'lucide-react';
+import { MetricCard } from '@/components/MetricCard';
+import {
+  MetricCardSkeleton,
+  TargetCardSkeleton,
+  InsightsBannerSkeleton,
+  StudentCardSkeleton,
+  FilterPillsSkeleton
+} from '@/components/LoadingSkeleton';
 
 interface SkillMetrics {
   speaking: { score: number; trend: 'up' | 'down' | 'stable'; sessions: number };
@@ -56,6 +65,17 @@ interface SkillMetrics {
   vocabulary: { wordsLearned: number; weeklyNew: number; retentionRate: number };
 }
 
+interface TargetMetrics {
+  weeklyLessons: number;
+  weeklyMinutes: number;
+  monthlyProgress: number; // percentage
+  currentWeekLessons: number;
+  currentWeekMinutes: number;
+  currentMonthProgress: number;
+  weeklyTargetMet: boolean;
+  monthlyOnTrack: boolean;
+}
+
 interface StudentProgressCard {
   userId: string;
   name: string;
@@ -63,7 +83,7 @@ interface StudentProgressCard {
   firstName?: string;
   lastName?: string;
   organization: string;
-  
+
   overallProgress: number;
   currentLesson: string;
   currentModule: string;
@@ -71,6 +91,8 @@ interface StudentProgressCard {
   totalLessons: number;
   expectedCompletion: string | null;
   learningVelocity: number;
+
+  targets?: TargetMetrics;
   
   currentStreak: number;
   longestStreak: number;
@@ -115,6 +137,7 @@ interface QuickAction {
   icon: React.ComponentType<{ className?: string }>;
   href: string;
   color: string;
+  bgColor: string;
   count?: number;
 }
 
@@ -125,6 +148,7 @@ const quickActions: QuickAction[] = [
     icon: CheckCircle2,
     href: '/teacher-dashboard/task-completions',
     color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
     count: 358
   },
   {
@@ -133,6 +157,7 @@ const quickActions: QuickAction[] = [
     icon: BookOpen,
     href: '/teacher-dashboard/grammar',
     color: 'text-green-600',
+    bgColor: 'bg-green-50',
     count: 24
   },
   {
@@ -141,6 +166,7 @@ const quickActions: QuickAction[] = [
     icon: Mic,
     href: '/teacher-dashboard/speaking',
     color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
     count: 152
   },
   {
@@ -149,6 +175,7 @@ const quickActions: QuickAction[] = [
     icon: Headphones,
     href: '/teacher-dashboard/listening',
     color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
     count: 18
   },
   {
@@ -157,6 +184,7 @@ const quickActions: QuickAction[] = [
     icon: FileText,
     href: '/teacher-dashboard/reading',
     color: 'text-teal-600',
+    bgColor: 'bg-teal-50',
     count: 12
   },
   {
@@ -165,6 +193,7 @@ const quickActions: QuickAction[] = [
     icon: Volume2,
     href: '/teacher-dashboard/pronunciation',
     color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
     count: 89
   },
   {
@@ -173,6 +202,7 @@ const quickActions: QuickAction[] = [
     icon: BarChart3,
     href: '/teacher-dashboard/discourse-analysis',
     color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50',
     count: 45
   },
   {
@@ -181,6 +211,7 @@ const quickActions: QuickAction[] = [
     icon: MessageSquare,
     href: '/teacher-dashboard/chatbot-scores',
     color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
     count: 67
   },
   {
@@ -189,6 +220,7 @@ const quickActions: QuickAction[] = [
     icon: AlertTriangle,
     href: '/teacher-dashboard/grammar-errors',
     color: 'text-red-600',
+    bgColor: 'bg-red-50',
     count: 146
   }
 ];
@@ -208,8 +240,23 @@ export default function Home() {
     activeStudents: 0,
     atRiskStudents: 0,
     averageProgress: 0,
-    averageEngagement: 0
+    averageEngagement: 0,
+    studentsOnTrack: 0,
+    studentsAheadOfTarget: 0,
+    studentsBehindTarget: 0
   });
+
+  // Default targets - can be customized per student later
+  const defaultTargets: TargetMetrics = {
+    weeklyLessons: 3,
+    weeklyMinutes: 180, // 3 hours per week
+    monthlyProgress: 15, // 15% progress per month
+    currentWeekLessons: 0,
+    currentWeekMinutes: 0,
+    currentMonthProgress: 0,
+    weeklyTargetMet: false,
+    monthlyOnTrack: false
+  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -243,15 +290,45 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ organizationCode: 'ANB' })
       });
-      
+
       const data = await response.json();
-      setStudents(data.students || []);
-      setSummary(data.summary || {
-        totalStudents: 0,
-        activeStudents: 0,
-        atRiskStudents: 0,
-        averageProgress: 0,
-        averageEngagement: 0
+
+      // Add mock targets to students for now - will be replaced with real data
+      const studentsWithTargets = (data.students || []).map((student: StudentProgressCard) => {
+        // Calculate current week/month metrics based on student data
+        const currentWeekLessons = Math.min(student.lessonsCompleted % 7, defaultTargets.weeklyLessons);
+        const currentWeekMinutes = student.averageDailyMinutes * 7;
+        const currentMonthProgress = student.learningVelocity * 4; // 4 weeks estimate
+
+        return {
+          ...student,
+          targets: {
+            ...defaultTargets,
+            currentWeekLessons,
+            currentWeekMinutes,
+            currentMonthProgress,
+            weeklyTargetMet: currentWeekLessons >= defaultTargets.weeklyLessons && currentWeekMinutes >= defaultTargets.weeklyMinutes,
+            monthlyOnTrack: currentMonthProgress >= defaultTargets.monthlyProgress
+          }
+        };
+      });
+
+      // Calculate target-based summary metrics
+      const studentsOnTrack = studentsWithTargets.filter((s: StudentProgressCard) => s.targets?.weeklyTargetMet && s.targets?.monthlyOnTrack).length;
+      const studentsAheadOfTarget = studentsWithTargets.filter((s: StudentProgressCard) =>
+        s.targets && s.targets.currentMonthProgress > s.targets.monthlyProgress * 1.2
+      ).length;
+      const studentsBehindTarget = studentsWithTargets.filter((s: StudentProgressCard) =>
+        s.targets && !s.targets.monthlyOnTrack
+      ).length;
+
+      setStudents(studentsWithTargets);
+      setSummary({
+        ...(data.summary || {}),
+        totalStudents: studentsWithTargets.length,
+        studentsOnTrack,
+        studentsAheadOfTarget,
+        studentsBehindTarget
       });
     } catch (error) {
       console.error('Error fetching student progress:', error);
@@ -439,104 +516,71 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Navigation Bar */}
-      <nav className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-6 max-w-7xl">
+      {/* Main Navigation Bar - Clean Design */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-8 py-6 max-w-7xl">
           <div className="flex items-center justify-between">
             {/* Logo and Brand */}
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/10 backdrop-blur rounded-lg">
-                <School className="h-10 w-10 text-white" />
+              <div className="p-2 bg-blue-600 rounded-lg shadow-md">
+                <School className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">telc A1 German</h1>
-                <p className="text-blue-100 text-base">Teacher Dashboard</p>
+                <h1 className="text-2xl font-bold text-gray-900">telc A1 German</h1>
+                <p className="text-sm text-gray-600">Teacher Dashboard</p>
               </div>
             </div>
 
             {/* Navigation Links */}
-            <div className="hidden lg:flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white text-base py-2 px-4"
+            <div className="hidden lg:flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 onClick={() => router.push('/')}
               >
-                <Users className="h-5 w-5 mr-2" />
+                <Users className="h-4 w-4 mr-2" />
                 Overview
               </Button>
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white text-base py-2 px-4"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 onClick={() => router.push('/teacher-dashboard/student-progress')}
               >
-                <Activity className="h-5 w-5 mr-2" />
+                <Activity className="h-4 w-4 mr-2" />
                 All Students
               </Button>
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white text-base py-2 px-4"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 onClick={() => router.push('/teacher-dashboard/manage-students')}
               >
-                <UserPlus className="h-5 w-5 mr-2" />
+                <UserPlus className="h-4 w-4 mr-2" />
                 Manage
               </Button>
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white text-base py-2 px-4"
-                onClick={() => router.push('/teacher-dashboard/task-completions')}
-              >
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                Tasks
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white text-base py-2 px-4"
-                onClick={() => router.push('/teacher-dashboard/skills')}
-              >
-                <BookOpen className="h-5 w-5 mr-2" />
-                Skills
-              </Button>
-              
-              <div className="ml-4 h-10 w-px bg-white/20" />
-              
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white p-2.5"
+
+              <div className="ml-3 h-6 w-px bg-gray-300" />
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 onClick={fetchStudentProgress}
               >
-                <RefreshCw className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white relative p-2.5"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="default"
-                className="text-white hover:bg-white/10 hover:text-white p-2.5"
-              >
-                <Settings className="h-5 w-5" />
+                <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
 
             {/* User Info */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="text-right hidden md:block">
-                <p className="font-semibold">{user?.firstName || 'Teacher'}</p>
-                <p className="text-xs text-blue-100">{currentTime}</p>
+                <p className="text-sm font-medium text-gray-900">{user?.firstName || 'Teacher'}</p>
+                <p className="text-xs text-gray-500">{currentTime}</p>
               </div>
-              <Avatar className="h-12 w-12 border-2 border-white/20">
-                <AvatarFallback className="bg-white/10 text-white">
+              <Avatar className="h-9 w-9 border border-gray-200">
+                <AvatarFallback className="bg-gray-100 text-gray-700 text-sm font-medium">
                   {user?.firstName?.[0] || 'T'}
                 </AvatarFallback>
               </Avatar>
@@ -545,474 +589,534 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Page Header with Stats */}
+      {/* Enhanced Header with Time-based Greeting */}
       <div className="bg-white border-b shadow-sm">
-        <div className="container mx-auto px-6 py-8 max-w-7xl">
+        <div className="container mx-auto px-8 py-6 max-w-7xl">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {getTimeBasedGreeting()}, {user?.firstName || 'Teacher'}!
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+              {getTimeBasedGreeting()}, {user?.firstName || 'Teacher'}
             </h1>
             <p className="text-gray-600">
-              Monitor and track your students' German language learning progress
+              A&B Recruiting Teacher Portal • {currentTime}
             </p>
           </div>
 
-          {/* Real-time Stats Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{summary.totalStudents}</div>
-                  <div className="text-sm text-blue-700">Total Students</div>
+          {/* Key Metrics with Contextual Comparison - F-Pattern Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {loading ? (
+              <>
+                <MetricCardSkeleton variant="accent" />
+                <MetricCardSkeleton variant="minimal" />
+                <MetricCardSkeleton variant="minimal" />
+                <MetricCardSkeleton variant="accent" />
+              </>
+            ) : (
+              <>
+                {/* Primary Metric - Active Students */}
+                <div className="bg-blue-600 rounded-xl p-5 text-white shadow-md hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-medium text-blue-50 mb-1">Active Students (7d)</div>
+                      <div className="text-4xl font-bold">{summary.activeStudents}</div>
+                    </div>
+                    <Activity className="h-8 w-8 text-blue-100" />
+                  </div>
+                  <div className="mt-3 text-xs text-blue-50">
+                    {Math.round((summary.activeStudents / summary.totalStudents) * 100)}% engagement rate
+                  </div>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
-              </div>
-            </div>
-            
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{summary.activeStudents}</div>
-                  <div className="text-sm text-green-700">Active (7d)</div>
+
+                {/* Alert Metric - Needs Attention */}
+                <div className="bg-white rounded-xl p-5 border-2 border-amber-200 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-medium text-amber-700 mb-1">Needs Attention</div>
+                      <div className="text-4xl font-bold text-amber-600">{summary.atRiskStudents}</div>
+                    </div>
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <AlertTriangle className="h-6 w-6 text-amber-600" />
+                    </div>
+                  </div>
+                  <div className="text-sm text-amber-700">Students requiring support</div>
                 </div>
-                <Activity className="h-8 w-8 text-green-500" />
-              </div>
-            </div>
-            
-            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-red-600">{summary.atRiskStudents}</div>
-                  <div className="text-sm text-red-700">At Risk</div>
+
+                {/* Performance Metric */}
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-medium text-gray-600 mb-1">Average Progress</div>
+                      <div className="text-4xl font-bold text-gray-900">{summary.averageProgress}%</div>
+                    </div>
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Target className="h-6 w-6 text-purple-600" />
+                    </div>
+                  </div>
+                  <Progress value={summary.averageProgress} className="h-2 mb-2" />
+                  <div className="text-sm text-gray-600">{summary.totalStudents} total students</div>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-red-500" />
-              </div>
-            </div>
-            
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-purple-600">{summary.averageProgress}%</div>
-                  <div className="text-sm text-purple-700">Avg Progress</div>
+
+                {/* Success Metric */}
+                <div className="bg-emerald-600 rounded-xl p-5 text-white shadow-md hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-medium text-emerald-50 mb-1">High Achievers</div>
+                      <div className="text-4xl font-bold">{students.filter(s => s.averageScore >= 80).length}</div>
+                    </div>
+                    <Award className="h-8 w-8 text-emerald-100" />
+                  </div>
+                  <div className="text-sm text-emerald-50">Students above 80% score</div>
                 </div>
-                <Target className="h-8 w-8 text-purple-500" />
-              </div>
-            </div>
-            
-            <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-amber-600">{summary.averageEngagement}%</div>
-                  <div className="text-sm text-amber-700">Avg Engagement</div>
-                </div>
-                <Zap className="h-8 w-8 text-amber-500" />
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="container mx-auto px-6 py-8 max-w-7xl space-y-8">
-        {/* Quick Analytics Links - Compact Bar */}
-        <div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            {quickActions.map((action) => {
-              const IconComponent = action.icon;
-              return (
-                <Link key={action.href} href={action.href}>
-                  <Button variant="outline" size="sm" className="whitespace-nowrap">
-                    <IconComponent className={cn("h-4 w-4 mr-2", action.color)} />
-                    {action.title}
-                    {action.count && (
-                      <Badge variant="secondary" className="ml-2 px-1 py-0 text-xs">
-                        {action.count}
-                      </Badge>
-                    )}
+      <div className="container mx-auto px-6 py-6 max-w-7xl space-y-6">
+
+        {/* Main Dashboard Grid - Activity & Performance */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Left Column: Insights & Students */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Actionable Insights Banner */}
+            {loading ? (
+              <InsightsBannerSkeleton />
+            ) : (
+              <div className="bg-indigo-600 rounded-xl p-6 text-white shadow-md">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="h-5 w-5" />
+                      <h3 className="text-lg font-semibold">Today's Key Insights</h3>
+                    </div>
+                    <p className="text-indigo-50 mb-4">
+                      📈 {summary.activeStudents} students active in the last 7 days ({Math.round((summary.activeStudents / summary.totalStudents) * 100)}% engagement).
+                      {summary.atRiskStudents > 0 ? ` ⚠️ ${summary.atRiskStudents} students need immediate attention.` : ' All students on track!'}
+                      {students.filter(s => s.averageScore >= 80).length > 0 && ` 🌟 ${students.filter(s => s.averageScore >= 80).length} high achievers excelling.`}
+                    </p>
+                    <div className="flex gap-3">
+                      <Link href="/teacher-dashboard/student-progress">
+                        <Button size="sm" variant="secondary" className="bg-indigo-500 hover:bg-indigo-400 text-white border-0">
+                          View Details →
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="hidden md:flex items-center gap-4">
+                    <div className="text-center px-4 border-l border-indigo-400">
+                      <div className="text-3xl font-bold">{summary.averageProgress}%</div>
+                      <div className="text-sm text-indigo-100">Avg Progress</div>
+                    </div>
+                    <div className="text-center px-4 border-l border-indigo-400">
+                      <div className="text-3xl font-bold">{summary.averageEngagement}%</div>
+                      <div className="text-sm text-indigo-100">Engagement</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Analytics - Bento Grid Card */}
+            <Card className="border-gray-200 bg-white shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-gray-900">Quick Analytics</CardTitle>
+                </div>
+                <CardDescription>Detailed skill breakdowns and performance tracking</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {quickActions.map((action) => {
+                    const IconComponent = action.icon;
+                    return (
+                      <Link key={action.href} href={action.href}>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-blue-50 hover:border-blue-200 border border-gray-100 transition-all cursor-pointer group">
+                          <div className={cn("p-2 rounded-md", action.bgColor)}>
+                            <IconComponent className={cn("h-5 w-5", action.color)} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{action.title}</p>
+                            <p className="text-xs text-gray-500">{action.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs font-bold">
+                              {action.count}
+                            </Badge>
+                            <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+                <Link href="/teacher-dashboard">
+                  <Button variant="outline" className="w-full mt-4 border-gray-300 hover:bg-gray-50">
+                    View Full Dashboard →
                   </Button>
                 </Link>
-              );
-            })}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column: Performance & Alerts */}
+          <div className="space-y-6">
+
+            {/* Top Performers */}
+            {loading ? (
+              <Card className="border-emerald-200 bg-emerald-50 animate-pulse">
+                <CardContent className="p-6 space-y-4">
+                  <div className="h-6 w-32 bg-emerald-200 rounded" />
+                  <div className="h-4 w-24 bg-emerald-100 rounded" />
+                  {[1,2,3].map(i => <div key={i} className="h-16 bg-emerald-100 rounded" />)}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-emerald-200 bg-emerald-50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Award className="h-5 w-5 text-emerald-600" />
+                    <CardTitle className="text-emerald-900">Top Performers</CardTitle>
+                  </div>
+                  <CardDescription>Leading students this week</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {students
+                    .filter(s => s.averageScore >= 70)
+                    .sort((a, b) => b.averageScore - a.averageScore)
+                    .slice(0, 3)
+                    .map((student, index) => (
+                      <Link key={student.userId} href={`/teacher-dashboard/student/${student.userId}`}>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-emerald-100 hover:shadow-md transition-shadow cursor-pointer">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="relative">
+                              <Avatar className="h-10 w-10 border-2 border-emerald-200">
+                                <AvatarFallback className="bg-emerald-500 text-white font-semibold">
+                                  {student.name.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              {index === 0 && <Star className="h-4 w-4 text-yellow-500 fill-current absolute -top-1 -right-1" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{student.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Progress value={student.averageScore} className="h-1.5 flex-1" />
+                                <span className="text-xs font-medium text-emerald-600">{student.averageScore}%</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 text-orange-600">
+                              <Flame className="h-3 w-3 fill-current" />
+                              <span className="text-xs font-bold">{student.currentStreak}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  {students.filter(s => s.averageScore >= 70).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No high performers yet</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* At-Risk Students Alert */}
+            {loading ? (
+              <Card className="border-red-200 bg-red-50 animate-pulse">
+                <CardContent className="p-6 space-y-4">
+                  <div className="h-6 w-32 bg-red-200 rounded" />
+                  <div className="h-4 w-24 bg-red-100 rounded" />
+                  {[1,2,3].map(i => <div key={i} className="h-16 bg-red-100 rounded" />)}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-red-200 bg-red-50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <CardTitle className="text-red-900">Needs Attention</CardTitle>
+                  </div>
+                  <CardDescription>Students requiring support</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {students
+                    .filter(s => s.atRiskOfDropout || s.averageScore < 50)
+                    .sort((a, b) => a.averageScore - b.averageScore)
+                    .slice(0, 3)
+                    .map((student) => (
+                      <Link key={student.userId} href={`/teacher-dashboard/student/${student.userId}`}>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-red-100 hover:shadow-md transition-shadow cursor-pointer">
+                          <div className="flex items-center gap-3 flex-1">
+                            <Avatar className="h-10 w-10 border-2 border-red-200">
+                              <AvatarFallback className="bg-red-100 text-red-600 font-semibold">
+                                {student.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{student.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Progress value={student.averageScore} className="h-1.5 flex-1" />
+                                <span className="text-xs font-medium text-red-600">{student.averageScore}%</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className="text-xs border-red-200 text-red-700">
+                              {student.inactivityDays}d ago
+                            </Badge>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  {students.filter(s => s.atRiskOfDropout || s.averageScore < 50).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">All students doing well!</p>
+                  )}
+                  <Link href="/teacher-dashboard/student-progress">
+                    <Button variant="outline" className="w-full mt-2 border-red-300 text-red-700 hover:bg-red-50">
+                      Review All →
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
-
-        {/* Streamlined Filters & Search */}
-        <Card>
-          <CardContent className="p-6">
-            {/* Header with Search */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Filters & Search</h3>
-                {activeFilters.length > 0 && (
-                  <Badge variant="default" className="ml-2">
-                    {activeFilters.length} active
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-3">
-                {/* Search Field */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by name or email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 py-2 w-64 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                
-                {/* Clear All Button */}
-                {(activeFilters.length > 0 || searchQuery) && (
-                  <Button 
-                    variant="outline" 
-                    size="default" 
-                    onClick={clearAllFilters}
-                    className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                  >
-                    <X className="h-4 w-4" />
-                    Clear All
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            {/* Filter Buttons - Colorful flat list */}
-            <div className="flex flex-wrap gap-3">
-              {quickFiltersList.map((filter) => {
-                const count = getFilterCount(filter.key);
-                const isActive = activeFilters.includes(filter.key);
-                const IconComponent = filter.icon;
-                
-                return (
-                  <Button
-                    key={filter.key}
-                    onClick={() => toggleQuickFilter(filter.key)}
-                    disabled={count === 0}
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "gap-2 font-medium transition-all duration-200 border-2",
-                      isActive ? [
-                        filter.activeBg,
-                        "text-white border-transparent shadow-lg scale-105 hover:opacity-90"
-                      ] : [
-                        filter.bgColor,
-                        filter.borderColor,
-                        filter.textColor,
-                        count === 0
-                          ? "opacity-50 cursor-not-allowed"
-                          : "hover:scale-105 hover:shadow-md hover:border-opacity-100"
-                      ]
-                    )}
-                  >
-                    <IconComponent className="h-4 w-4" />
-                    <span>{filter.label}</span>
-                    <Badge 
-                      variant="outline" 
-                      className={cn(
-                        "ml-1 px-1.5 py-0 text-xs font-bold border",
-                        isActive ? "bg-white/20 text-white border-white/30" : [
-                          filter.bgColor,
-                          filter.borderColor,
-                          filter.textColor
-                        ]
-                      )}
-                    >
-                      {count}
-                    </Badge>
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Student Progress Cards Section */}
         <div className="space-y-6">
           {/* Results Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {filteredStudents.length} Students Found
+              <h2 className="text-2xl font-semibold text-gray-900">
+                {filteredStudents.length} {filteredStudents.length === 1 ? 'Student' : 'Students'}
               </h2>
-              {/* Sort Buttons */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Sort by:</span>
-                <Button
-                  size="sm"
-                  variant={sortBy === 'engagement' ? 'default' : 'ghost'}
+
+              {/* Clean Sort Tabs */}
+              <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-white">
+                <button
                   onClick={() => setSortBy('engagement')}
-                  className="h-8"
+                  className={cn(
+                    "px-3 py-1 text-sm font-medium rounded transition-all",
+                    sortBy === 'engagement'
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
                 >
                   Engagement
-                </Button>
-                <Button
-                  size="sm"
-                  variant={sortBy === 'progress' ? 'default' : 'ghost'}
+                </button>
+                <button
                   onClick={() => setSortBy('progress')}
-                  className="h-8"
+                  className={cn(
+                    "px-3 py-1 text-sm font-medium rounded transition-all",
+                    sortBy === 'progress'
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
                 >
                   Progress
-                </Button>
-                <Button
-                  size="sm"
-                  variant={sortBy === 'activity' ? 'default' : 'ghost'}
+                </button>
+                <button
                   onClick={() => setSortBy('activity')}
-                  className="h-8"
+                  className={cn(
+                    "px-3 py-1 text-sm font-medium rounded transition-all",
+                    sortBy === 'activity'
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
                 >
-                  Recent Activity
-                </Button>
-                <Button
-                  size="sm"
-                  variant={sortBy === 'name' ? 'default' : 'ghost'}
+                  Activity
+                </button>
+                <button
                   onClick={() => setSortBy('name')}
-                  className="h-8"
+                  className={cn(
+                    "px-3 py-1 text-sm font-medium rounded transition-all",
+                    sortBy === 'name'
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
                 >
                   Name
-                </Button>
+                </button>
               </div>
             </div>
-            <Button 
-              variant="default" 
+
+            <Button
+              variant="outline"
               size="default"
               onClick={() => router.push('/teacher-dashboard/student-progress')}
-              className="gap-2"
+              className="gap-2 border-gray-300 hover:bg-gray-50 text-gray-700"
             >
-              View Full Dashboard
+              View All
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Student Cards Grid */}
+          {/* Student Cards Grid - 2025 Modern Design */}
           {loading ? (
-            <div className="flex items-center justify-center h-96">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 animate-pulse">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-14 w-14 rounded-full bg-gray-100" />
+                    <div className="flex-1">
+                      <div className="h-5 w-28 bg-gray-100 rounded mb-2" />
+                      <div className="h-3 w-20 bg-gray-50 rounded" />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {[1,2,3,4,5,6].map(i => <div key={i} className="h-3 bg-gray-50 rounded" />)}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              {filteredStudents.slice(0, 9).map((student) => (
-                <Card 
-                  key={student.userId} 
-                  className="group relative overflow-hidden bg-gradient-to-br from-white via-white to-gray-50/50 border-2 border-gray-100 shadow-lg hover:shadow-2xl hover:border-gray-200 hover:-translate-y-2 transform transition-all duration-500 cursor-pointer backdrop-blur-sm"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filteredStudents.slice(0, 12).map((student) => (
+                <div
+                  key={student.userId}
+                  className="group cursor-pointer bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300"
                   onClick={() => router.push(`/teacher-dashboard/student/${student.userId}`)}
                 >
-                  {/* Animated Background Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-50/30 group-hover:to-blue-100/50 transition-all duration-500" />
-                  
-                  {/* Status Indicator - Enhanced */}
-                  <div className={cn(
-                    "absolute top-0 left-0 right-0 h-2 bg-gradient-to-r",
-                    student.atRiskOfDropout ? "from-red-400 to-red-600" :
-                    student.engagementScore >= 70 ? "from-green-400 to-green-600" :
-                    student.engagementScore >= 40 ? "from-blue-400 to-blue-600" :
-                    "from-orange-400 to-red-500"
-                  )} />
-                  
-                  {/* Risk Badge */}
-                  {student.atRiskOfDropout && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
-                        <AlertTriangle className="h-3 w-3 inline mr-1" />
-                        AT RISK
+                  {/* Header with improved spacing */}
+                  <div className="flex items-start gap-3 mb-6">
+                    <div className="relative flex-shrink-0">
+                      <div className="h-14 w-14 rounded-full bg-gray-900 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg tracking-tight">
+                          {student.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                      {student.currentStreak >= 7 && (
+                        <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-orange-500 flex items-center justify-center border-2 border-white">
+                          <Flame className="h-3 w-3 text-white fill-current" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 pt-1">
+                      <h3 className="text-base font-semibold text-gray-900 truncate mb-0.5 tracking-tight leading-tight">
+                        {student.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate leading-relaxed">{student.currentModule}</p>
+                    </div>
+                    {student.atRiskOfDropout && (
+                      <div className="flex-shrink-0 pt-1">
+                        <div className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center">
+                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress Bar - Prominent */}
+                  <div className="mb-6">
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Progress</span>
+                      <span className="text-2xl font-bold text-gray-900 tracking-tight">{student.overallProgress}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gray-900 rounded-full transition-all duration-500"
+                        style={{ width: `${student.overallProgress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Key Metrics Grid - Clean Typography */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-5 mb-6">
+                    {/* Streak */}
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Streak</div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-xl font-bold text-gray-900 tracking-tight">{student.currentStreak}</span>
+                        <span className="text-sm text-gray-500">days</span>
                       </div>
                     </div>
-                  )}
-                  
-                  <CardContent className="relative z-10 p-6">
-                    {/* Header Section - Reduced Size */}
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
-                          {/* Large Avatar with Circular Progress Ring */}
-                          <div className="relative">
-                            <svg className="transform -rotate-90 w-20 h-20">
-                              <circle
-                                cx="40"
-                                cy="40"
-                                r="38"
-                                stroke="#e5e7eb"
-                                strokeWidth="4"
-                                fill="transparent"
-                              />
-                              <circle
-                                cx="40"
-                                cy="40"
-                                r="38"
-                                stroke={student.engagementScore >= 70 ? "#10b981" : student.engagementScore >= 40 ? "#3b82f6" : "#f59e0b"}
-                                strokeWidth="4"
-                                fill="transparent"
-                                strokeDasharray={`${(student.overallProgress * 239) / 100} 239`}
-                                className="transition-all duration-1000 ease-out group-hover:stroke-width-6"
-                              />
-                            </svg>
-                            <Avatar className="absolute inset-2 h-16 w-16">
-                              <AvatarFallback className={cn(
-                                "text-white font-bold text-xl shadow-lg",
-                                student.engagementScore >= 70 ? "bg-gradient-to-br from-green-400 via-green-500 to-green-600" :
-                                student.engagementScore >= 40 ? "bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600" :
-                                "bg-gradient-to-br from-orange-400 via-orange-500 to-red-600"
-                              )}>
-                                {student.name.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                          {/* Streak Indicator - Enhanced */}
-                          {student.currentStreak > 0 && (
-                            <div className={cn(
-                              "absolute -bottom-2 -right-2 rounded-full p-2 shadow-lg animate-pulse",
-                              student.currentStreak > 7 ? "bg-gradient-to-r from-orange-400 to-red-500" : "bg-gradient-to-r from-blue-400 to-blue-500"
-                            )}>
-                              <Flame className="h-4 w-4 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">{student.name}</h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant={student.inactivityDays === 0 ? "default" : 
-                                        student.inactivityDays <= 3 ? "secondary" : 
-                                        "destructive"}
-                                className="text-xs px-2 py-1"
-                              >
-                                {student.inactivityDays === 0 ? '🟢 Active today' :
-                                 student.inactivityDays === 1 ? '🟡 Yesterday' :
-                                 `🔴 ${student.inactivityDays}d inactive`}
-                              </Badge>
-                            </div>
-                            {student.email && (
-                              <p className="text-sm text-gray-600">{student.email}</p>
-                            )}
-                          </div>
-                        </div>
+
+                    {/* Score */}
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Score</div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={cn("text-xl font-bold tracking-tight",
+                          student.averageScore >= 80 ? "text-green-600" :
+                          student.averageScore >= 60 ? "text-blue-600" : "text-orange-600"
+                        )}>
+                          {student.averageScore}
+                        </span>
+                        <span className="text-sm text-gray-500">%</span>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {getPaceIcon(student.learningPace)}
-                        <span className={cn("text-sm font-medium capitalize", 
+                    </div>
+
+                    {/* Engagement */}
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Engagement</div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={cn("text-xl font-bold tracking-tight",
+                          student.engagementScore >= 70 ? "text-green-600" :
+                          student.engagementScore >= 40 ? "text-blue-600" : "text-red-600"
+                        )}>
+                          {student.engagementScore}
+                        </span>
+                        <span className="text-sm text-gray-500">%</span>
+                      </div>
+                    </div>
+
+                    {/* Pace */}
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Pace</div>
+                      <div className="flex items-center gap-1.5">
+                        {student.learningPace === 'ahead' && <TrendingUp className="h-4 w-4 text-green-600" />}
+                        {student.learningPace === 'on-track' && <Activity className="h-4 w-4 text-blue-600" />}
+                        {student.learningPace === 'behind' && <TrendingDown className="h-4 w-4 text-red-600" />}
+                        <span className={cn("text-sm font-semibold capitalize",
                           student.learningPace === 'ahead' ? 'text-green-600' :
-                          student.learningPace === 'behind' ? 'text-red-600' :
-                          'text-blue-600'
+                          student.learningPace === 'behind' ? 'text-red-600' : 'text-blue-600'
                         )}>
                           {student.learningPace}
                         </span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Main Metrics Grid - Enhanced */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      {/* Progress Card */}
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 shadow-inner">
-                        <div className="text-center">
-                          <div className={cn("text-3xl font-bold mb-2", getProgressColor(student.overallProgress))}>
-                            {student.overallProgress}%
-                          </div>
-                          <p className="text-sm font-medium text-blue-700 mb-3">Course Progress</p>
-                          <Progress value={student.overallProgress} className="h-2 bg-blue-200" />
-                          <p className="text-xs text-blue-600 mt-2">
-                            {student.lessonsCompleted} of {student.totalLessons} lessons
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Engagement Card */}
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 shadow-inner">
-                        <div className="text-center">
-                          <div className={cn("text-3xl font-bold mb-2", getEngagementColor(student.engagementScore))}>
-                            {student.engagementScore}%
-                          </div>
-                          <p className="text-sm font-medium text-green-700 mb-3">Engagement</p>
-                          {student.currentStreak > 0 && (
-                            <div className="flex items-center justify-center gap-2 bg-white/50 rounded-lg px-3 py-1">
-                              <Flame className="h-4 w-4 text-orange-500" />
-                              <span className="text-sm font-bold text-orange-600">{student.currentStreak} day streak</span>
-                            </div>
-                          )}
-                        </div>
+                  {/* Lessons - Bottom Stat */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Lessons</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-bold text-gray-900 tracking-tight">{student.lessonsCompleted}</span>
+                        <span className="text-sm text-gray-400">/</span>
+                        <span className="text-sm text-gray-500">{student.totalLessons}</span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Skills and Performance */}
-                    <div className="space-y-6">
-                      {/* Performance Score */}
-                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-700 mb-1">Average Score</p>
-                            <div className={cn("text-3xl font-bold", 
-                              student.averageScore >= 80 ? "text-green-600" :
-                              student.averageScore >= 60 ? "text-blue-600" :
-                              "text-red-600"
-                            )}>
-                              {student.averageScore}%
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle2 className="h-5 w-5 text-green-500" />
-                              <span className="text-sm font-medium text-gray-700">Strongest:</span>
-                            </div>
-                            <p className="text-lg font-bold text-green-600">{student.strongestSkill}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Focus Area */}
-                      {student.recommendedFocus.length > 0 && (
-                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
-                          <div className="flex items-start gap-3">
-                            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-bold text-amber-800 mb-1">Focus Area</p>
-                              <p className="text-sm text-amber-700">{student.recommendedFocus[0]}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Study Stats */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-50 rounded-lg p-3 text-center">
-                          <p className="text-lg font-bold text-gray-900">{student.averageDailyMinutes}</p>
-                          <p className="text-xs text-gray-600">min/day avg</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-3 text-center">
-                          <p className="text-lg font-bold text-gray-900">{student.totalStudyHours}h</p>
-                          <p className="text-xs text-gray-600">total study</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Enhanced Hover Action */}
-                    <div className="mt-8 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                      <Button 
-                        variant="default" 
-                        size="lg" 
-                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg text-lg font-semibold py-6"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/teacher-dashboard/student/${student.userId}`);
-                        }}
-                      >
-                        View Detailed Analytics
-                        <ChevronRight className="h-5 w-5 ml-2" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Hover Action - Minimalist */}
+                  <div className="mt-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/teacher-dashboard/student/${student.userId}`);
+                      }}
+                    >
+                      View Profile
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
 
           {/* View All Students Link */}
-          {filteredStudents.length > 9 && (
+          {filteredStudents.length > 12 && (
             <div className="text-center mt-8">
-              <Button 
+              <Button
                 size="lg"
                 onClick={() => router.push('/teacher-dashboard/student-progress')}
-                className="gap-2 shadow-lg"
+                className="gap-2 shadow-md bg-blue-600 hover:bg-blue-700 text-white"
               >
                 View All {filteredStudents.length} Students
                 <ChevronRight className="h-4 w-4" />

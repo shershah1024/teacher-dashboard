@@ -94,7 +94,7 @@ export default function ListeningDashboard() {
       const response = await fetch('/api/teacher-dashboard/listening-scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationCode: 'ANB' })
+        body: JSON.stringify({ organizationCode: 'default' })
       });
       
       const data = await response.json();
