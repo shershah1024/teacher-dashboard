@@ -710,7 +710,6 @@ export default function StudentProgressDashboard() {
                 </button>
               </div>
             </div>
-          </div>
         ))}
         </div>
       </div>

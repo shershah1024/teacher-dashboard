@@ -534,6 +534,7 @@ export default function StudentDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
